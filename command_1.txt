@@ -1,0 +1,4 @@
+ls -la
+ip add
+ping -c 12 8.8.8.8
+echo Host 1

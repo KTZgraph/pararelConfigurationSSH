@@ -3,32 +3,55 @@
 import threading
 import paramiko
 import subprocess
-
+from concurrent import futures
 """
 GLOBAL parameters
 """
 
-remote_login = "user"
-remote_password = "centos"
-remote_host_ip = "192.168.0.12"
+host_1 = {
+    "login" : "user",
+    "password" : "centos",
+    "ip" : "192.168.0.12",
+    "file" : "command_1.txt"
 
-def one_command(remote_host_ip, remote_login, remote_password, command):
+}
+
+host_2 = {
+    "login" : "user2",
+    "password" : "centos2",
+    "ip" : "192.168.0.33",
+    "file" : "command_2.txt"
+
+}
+
+
+def connect_via_ssh(host_data, command_list=None):
     """
-    Login via user, and passwd without SSH Keys [!]
-    Note:
-        For security always use SSH KEYS !
+    Return ssh session
     """
     client_ssh = paramiko.SSHClient()
     # client_ssh.load_host_keys('path for keys')
     client_ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy()) # for logging via user&passwd
-    client_ssh.connect(remote_host_ip, username=remote_login, password=remote_password)
+    client_ssh.connect(host_data["ip"], username=host_data["login"], password=host_data["password"])
     ssh_session = client_ssh.get_transport().open_session()
     if ssh_session.active:
-        ssh_session.exec_command(command)
-        remote_output = ssh_session.recv(1024)
-        return remote_output
+        if "file" in host_data:
+            with open(host_data["file"], 'r') as f:
+                command_list = f.read()
+            command_list = [str(i) for i in command_list.split('\n')]
+            for command in command_list:
+                ssh_session.exec_command(command)
+                remote_output = ssh_session.recv(1024)
+                print(remote_output)
+        return ssh_session
     else:
-        return {'code' : 3, 'message': "Can't connect to host: {host_ip}".format(host_ip = remote_host_ip)}
+        raise ConnectionError("Can't connect to host: {address} ".format(address = host_data["ip"]))
 
-output = one_command(remote_host_ip, remote_login, remote_password, 'ls -la')
-print(output)
+
+
+def main():
+    ssh_session_1 = connect_via_ssh(host_1)
+    ssh_session_2 = connect_via_ssh(host_2)
+
+if __name__ == "__main__":
+    main()
