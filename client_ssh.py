@@ -33,13 +33,13 @@ def connect_via_ssh(host_data, command_list=None):
     # client_ssh.load_host_keys('path for keys')
     client_ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy()) # for logging via user&passwd
     client_ssh.connect(host_data["ip"], username=host_data["login"], password=host_data["password"])
-    ssh_session = client_ssh.get_transport().open_session()
-    if ssh_session.active:
-        if "file" in host_data:
-            with open(host_data["file"], 'r') as f:
-                command_list = f.read()
-            command_list = [str(i) for i in command_list.split('\n')]
-            for command in command_list:
+    if "file" in host_data:
+        with open(host_data["file"], 'r') as f:
+            command_list = f.read()
+        command_list = [str(i) for i in command_list.split('\n')]
+        for command in command_list:
+            ssh_session = client_ssh.get_transport().open_session()
+            if ssh_session.active:
                 ssh_session.exec_command(command)
                 remote_output = ssh_session.recv(1024)
                 print(remote_output)
